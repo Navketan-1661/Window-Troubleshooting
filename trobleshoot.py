@@ -39,235 +39,110 @@ menu = st.sidebar.radio(
 
 if menu == "Boot Issue":
     st.header("🖥 Boot Issues")
-
-    st.subheader("1. Slow Boot Time")
-    st.write(
-        "Slow boot occurs when Windows takes a long time to reach the login screen. "
-        "This usually happens due to too many startup programs, outdated drivers, "
-        "or a traditional hard disk instead of an SSD."
-    )
-
-    st.subheader("2. Startup Repair Errors")
-    st.write(
-        "Startup Repair errors appear when Windows detects corrupted system files. "
-        "It may fail to fix the issue automatically, leading to a repair loop."
-    )
-
-    st.subheader("3. Corrupted Boot Files")
-    st.write(
-        "Boot files such as BCD or MBR can get corrupted due to sudden power failure, "
-        "malware, or disk errors. This prevents Windows from loading properly."
-    )
-
-    st.subheader("4. Recovery Mode Fixes")
-    st.write(
-        "Using Windows Recovery Environment (WinRE), you can access Startup Repair, "
-        "System Restore, and Command Prompt to repair boot-related problems."
-    )
+    st.subheader("Process to Fix:")
+    st.info("""
+    1. **Disable Startup Apps:** Press `Ctrl+Shift+Esc` > Startup tab > Disable high-impact apps.
+    2. **Run Startup Repair:** Shift + Restart > Troubleshoot > Advanced Options > Startup Repair.
+    3. **Check Disk Health:** Open Command Prompt as Admin > Type `chkdsk c: /f` > Restart.
+    4. **Update BIOS/Drivers:** Visit manufacturer's site for the latest chipset updates.
+    """)
 
 elif menu == "System Slowness":
     st.header("🐌 System Slowness")
-
-    st.subheader("1. High CPU or RAM Usage")
-    st.write(
-        "When CPU or RAM usage stays above 80%, the system becomes slow. "
-        "This is usually caused by background apps, malware, or insufficient RAM."
-    )
-
-    st.subheader("2. Too Many Startup Programs")
-    st.write(
-        "Applications that start automatically with Windows increase boot time "
-        "and consume system resources continuously."
-    )
-
-    st.subheader("3. Low Disk Space")
-    st.write(
-        "Windows needs free disk space for virtual memory and updates. "
-        "Less than 20% free space can significantly slow down the system."
-    )
-
-    st.subheader("4. Malware or Unwanted Software")
-    st.write(
-        "Malware runs hidden processes that consume CPU, memory, and disk resources, "
-        "causing overall system slowdown."
-    )
+    st.subheader("Process to Fix:")
+    st.success("""
+    1. **Check Task Manager:** `Ctrl+Shift+Esc` > Sort by CPU/Memory > End heavy tasks.
+    2. **Cleanup Temp Files:** Press `Win + R` > Type `%temp%` > Delete all files.
+    3. **Adjust Performance:** Search 'Appearance and Performance' > Select 'Adjust for best performance'.
+    4. **Check for Updates:** Settings > Update & Security > Check for Windows Updates.
+    """)
 
 elif menu == "Applications Issue":
     st.header("📦 Application Issues")
-
-    st.subheader("1. Application Crashes")
-    st.write(
-        "Apps may crash due to corrupted installation files, missing libraries, "
-        "or incompatible Windows updates."
-    )
-
-    st.subheader("2. Compatibility Problems")
-    st.write(
-        "Older applications may not work properly on newer Windows versions "
-        "unless compatibility mode is enabled."
-    )
-
-    st.subheader("3. Missing Dependencies")
-    st.write(
-        "Some applications require .NET Framework, Visual C++ Redistributables, "
-        "or Java to run correctly."
-    )
-
-    st.subheader("4. Microsoft Store App Errors")
-    st.write(
-        "Store apps may fail due to cache corruption, account sync issues, "
-        "or disabled background services."
-    )
+    st.subheader("Process to Fix:")
+    st.info("""
+    1. **Repair App:** Settings > Apps > Apps & Features > Select App > Advanced Options > Repair/Reset.
+    2. **Compatibility Mode:** Right-click app shortcut > Properties > Compatibility > Run for Windows 7/8.
+    3. **Install Dependencies:** Ensure .NET Framework and Visual C++ Redistributables are updated.
+    4. **Reinstall:** Uninstall the app, restart PC, and install the latest version from the official site.
+    """)
 
 elif menu == "C Drive Full":
     st.header("💽 C Drive Full")
-
-    st.subheader("1. Temporary Files Accumulation")
-    st.write(
-        "Temporary files created by apps and Windows updates can occupy large "
-        "amounts of disk space over time."
-    )
-
-    st.subheader("2. Windows Update Files")
-    st.write(
-        "Old update files remain stored after updates and are safe to remove "
-        "using Disk Cleanup."
-    )
-
-    st.subheader("3. Installed Programs")
-    st.write(
-        "Unused software installed on the C drive consumes space and should be "
-        "uninstalled if not required."
-    )
-
-    st.subheader("4. User Data Storage")
-    st.write(
-        "Storing videos, downloads, and documents on the C drive can quickly "
-        "fill it up. Moving them to another drive is recommended."
-    )
+    st.subheader("Process to Fix:")
+    st.success("""
+    1. **Disk Cleanup:** Search 'Disk Cleanup' > Select C: > Clean up system files.
+    2. **Storage Sense:** Settings > System > Storage > Turn on 'Storage Sense'.
+    3. **Uninstall Large Apps:** Settings > Apps > Sort by 'Size' > Remove what you don't need.
+    4. **Move Folders:** Right-click 'Downloads' or 'Documents' > Properties > Location > Move to D: Drive.
+    """)
 
 elif menu == "Printer Issue":
     st.header("🖨 Printer Issues")
-
-    st.subheader("1. Printer Offline Error")
-    st.write(
-        "This occurs when the printer is not communicating with the system due to "
-        "network issues or incorrect settings."
-    )
-
-    st.subheader("2. Driver Problems")
-    st.write(
-        "Outdated or corrupted printer drivers prevent Windows from sending "
-        "print commands correctly."
-    )
-
-    st.subheader("3. Print Spooler Errors")
-    st.write(
-        "The print spooler manages print jobs. If it stops or crashes, printing "
-        "will not work."
-    )
+    st.subheader("Process to Fix:")
+    st.info("""
+    1. **Restart Spooler:** `Win+R` > `services.msc` > Right-click 'Print Spooler' > Restart.
+    2. **Check Connection:** Ensure USB is firm or Wi-Fi is on the same network as the PC.
+    3. **Clear Queue:** Open Printer Queue > Printer Menu > Cancel All Documents.
+    4. **Update Driver:** Device Manager > Printers > Right-click your printer > Update Driver.
+    """)
 
 elif menu == "Windows Not Booting":
     st.header("⚠ Windows Not Booting")
-
-    st.subheader("1. Corrupt System Files")
-    st.write(
-        "Essential Windows files may become corrupt due to improper shutdowns "
-        "or disk errors."
-    )
-
-    st.subheader("2. Failed Windows Updates")
-    st.write(
-        "Interrupted updates can prevent Windows from booting properly."
-    )
-
-    st.subheader("3. Disk or Hardware Issues")
-    st.write(
-        "Hard disk failure or faulty RAM can completely stop Windows from loading."
-    )
+    st.subheader("Process to Fix:")
+    st.error("""
+    1. **Access WinRE:** Force shut down 3 times during boot to enter 'Automatic Repair' mode.
+    2. **System Restore:** Advanced Options > System Restore > Pick a date when it worked.
+    3. **SFC Scan:** Advanced Options > Command Prompt > Type `sfc /scannow`.
+    4. **Safe Mode:** Advanced Options > Startup Settings > Restart > Press 5 for Safe Mode with Networking.
+    """)
 
 elif menu == "BSOD Error":
     st.header("🔵 Blue Screen of Death (BSOD)")
-
-    st.subheader("1. Driver Conflicts")
-    st.write(
-        "Incorrect or incompatible drivers are the most common cause of BSOD errors."
-    )
-
-    st.subheader("2. Hardware Failures")
-    st.write(
-        "Faulty RAM, overheating CPU, or failing storage devices can trigger BSODs."
-    )
-
-    st.subheader("3. Memory Dump Analysis")
-    st.write(
-        "Windows creates dump files during BSODs which help identify the exact cause."
-    )
+    st.subheader("Process to Fix:")
+    st.info("""
+    1. **Note the Error Code:** Look for text like `CRITICAL_PROCESS_DIED` or `MEMORY_MANAGEMENT`.
+    2. **Update Graphics Driver:** Most BSODs are caused by Display drivers; update them via Device Manager.
+    3. **Memory Diagnostic:** Search 'Windows Memory Diagnostic' > Restart and check for RAM errors.
+    4. **Remove New Hardware:** Unplug recently added USB devices or RAM and test again.
+    """)
 
 elif menu == "Audio Issue":
     st.header("🔊 Audio Issues")
-
-    st.subheader("1. No Sound Output")
-    st.write(
-        "This can occur if the wrong playback device is selected or audio services "
-        "are not running."
-    )
-
-    st.subheader("2. Audio Driver Missing")
-    st.write(
-        "Without proper drivers, Windows cannot communicate with sound hardware."
-    )
-
-    st.subheader("3. Microphone Not Working")
-    st.write(
-        "Privacy settings or disabled microphone access can block audio input."
-    )
+    st.subheader("Process to Fix:")
+    st.success("""
+    1. **Check Output:** Click Speaker icon on Taskbar > Ensure correct device is selected.
+    2. **Privacy Settings:** Settings > Privacy > Microphone > Allow apps to access microphone.
+    3. **Troubleshoot:** Settings > System > Sound > Troubleshoot.
+    4. **Generic Driver:** Device Manager > Sound > Right-click device > Update > 'Browse my computer' > 'Let me pick' > Select 'High Definition Audio Device'.
+    """)
 
 elif menu == "Camera Issue":
     st.header("📷 Camera Issues")
-
-    st.subheader("1. Camera Not Detected")
-    st.write(
-        "Camera hardware may not be detected due to driver issues or BIOS settings."
-    )
-
-    st.subheader("2. Permission Denied")
-    st.write(
-        "Windows privacy settings may block camera access for applications."
-    )
+    st.subheader("Process to Fix:")
+    st.info("""
+    1. **Physical Switch:** Check for a sliding cover or a Function key (F6/F10) with a camera icon.
+    2. **Privacy Access:** Settings > Privacy > Camera > Enable 'Allow apps to access your camera'.
+    3. **Reset Camera App:** Settings > Apps > Camera > Advanced Options > Reset.
+    4. **Roll Back Driver:** Device Manager > Cameras > Properties > Driver tab > Roll Back Driver.
+    """)
 
 elif menu == "Display Issue":
     st.header("🖥 Display Issues")
-
-    st.subheader("1. Black Screen")
-    st.write(
-        "Often caused by graphics driver issues or incorrect display output selection."
-    )
-
-    st.subheader("2. Screen Flickering")
-    st.write(
-        "Occurs due to incompatible refresh rate or outdated graphics drivers."
-    )
-
-    st.subheader("3. Resolution Problems")
-    st.write(
-        "Incorrect resolution settings can make the display appear blurry or stretched."
-    )
+    st.subheader("Process to Fix:")
+    st.success("""
+    1. **Reset Driver:** Press `Win + Ctrl + Shift + B` (restarts the graphics driver).
+    2. **Check Refresh Rate:** Settings > System > Display > Advanced Display > Set to 60Hz.
+    3. **Night Light:** If screen is yellow, turn off 'Night Light' in Display settings.
+    4. **Cable Check:** Ensure HDMI/DisplayPort cables are fully plugged in or try a different cable.
+    """)
 
 elif menu == "Virtual Machine Issue":
     st.header("🧪 Virtual Machine Issues")
-
-    st.subheader("1. VM Not Starting")
-    st.write(
-        "Occurs when virtualization is disabled in BIOS or system resources are insufficient."
-    )
-
-    st.subheader("2. Network Not Working")
-    st.write(
-        "Incorrect VM network adapter configuration can block internet access."
-    )
-
-    st.subheader("3. Poor Performance")
-    st.write(
-        "Low RAM, CPU allocation, or missing guest additions reduce VM performance."
-    )
+    st.subheader("Process to Fix:")
+    st.info("""
+    1. **Enable VT-x/AMD-V:** Restart PC > Enter BIOS > Enable 'Virtualization Technology'.
+    2. **Disable Hyper-V:** (If using VirtualBox/VMware) Search 'Turn Windows features on/off' > Uncheck Hyper-V.
+    3. **Increase Resources:** Shut down VM > Settings > Increase RAM and CPU cores.
+    4. **Guest Additions:** Inside the VM, go to Devices menu > Insert Guest Additions Image > Install and Restart.
+    """)
