@@ -1,4 +1,7 @@
 import streamlit as st
+import json
+import time
+import requests
 
 # ================= PAGE CONFIG =================
 st.set_page_config(
@@ -6,6 +9,29 @@ st.set_page_config(
     page_icon="☕",
     layout="wide"
 )
+
+# ================= API HELPERS =================
+def call_gemini_api(prompt, system_instruction):
+    api_key = ""  # The environment provides the key at runtime
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key={api_key}"
+    
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "systemInstruction": {"parts": [{"text": system_instruction}]}
+    }
+    
+    # Exponential backoff
+    for i in range(5):
+        try:
+            response = requests.post(url, json=payload)
+            if response.status_code == 200:
+                result = response.json()
+                return result.candidates[0].content.parts[0].text
+        except Exception:
+            pass
+        time.sleep(2**i)
+    
+    return "I'm having trouble connecting to the Tech Cafe brain right now. Please try again in a moment."
 
 # ================= HEADER =================
 st.title("☕ Tech Cafe")
@@ -288,3 +314,43 @@ elif menu == "Virtual Machine Issue":
     4.  **Extension Packs:**
         * Install the 'Oracle VM VirtualBox Extension Pack' for USB 3.0 and RDP support.
     """)
+
+# ================= CHATBOT SECTION =================
+st.divider()
+st.subheader("🤖 Tech Cafe AI Assistant")
+st.write("Ask any Windows troubleshooting question and I'll guide you through the solution.")
+
+# Initialize chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Display chat messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# Chat system prompt
+SYSTEM_PROMPT = """
+You are the Tech Cafe AI Assistant, a technical expert specializing in Windows Troubleshooting.
+Your goal is to provide concise, step-by-step instructions for common Windows issues.
+Refer to these specific categories when helping users: 
+Boot Issues, System Slowness, App Crashes, C Drive Full, Printer Issues, BSOD Errors, Audio/Camera/Display problems, and Virtual Machine setup.
+Be professional, friendly, and use clear technical language.
+If you don't know the answer, suggest checking the official manufacturer's support site.
+"""
+
+# React to user input
+if prompt := st.chat_input("How can I help you today?"):
+    # Add user message to chat history
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # Call Gemini API
+    with st.chat_message("assistant"):
+        with st.spinner("Thinking..."):
+            response = call_gemini_api(prompt, SYSTEM_PROMPT)
+            st.markdown(response)
+    
+    # Add assistant response to chat history
+    st.session_state.messages.append({"role": "assistant", "content": response})
