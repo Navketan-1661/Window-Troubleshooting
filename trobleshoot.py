@@ -12,26 +12,40 @@ st.set_page_config(
 
 # ================= API HELPERS =================
 def call_gemini_api(prompt, system_instruction):
-    api_key = ""  # The environment provides the key at runtime
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key={api_key}"
+    # The environment provides the key at runtime; strictly leave as empty string.
+    apiKey = "" 
+    # Use the specific model version supported in the preview environment
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key={apiKey}"
     
     payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "systemInstruction": {"parts": [{"text": system_instruction}]}
+        "contents": [{
+            "parts": [{"text": prompt}]
+        }],
+        "systemInstruction": {
+            "parts": [{"text": system_instruction}]
+        }
     }
     
-    # Exponential backoff
+    # Exponential backoff retry logic (Mandatory for Gemini API)
     for i in range(5):
         try:
-            response = requests.post(url, json=payload)
+            response = requests.post(url, json=payload, timeout=30)
             if response.status_code == 200:
                 result = response.json()
-                return result.candidates[0].content.parts[0].text
-        except Exception:
+                # Extract text from the specific response path
+                return result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', "I received an empty response.")
+            elif response.status_code == 429:
+                # Rate limit hit, continue to next retry after sleep
+                pass
+            elif response.status_code == 400:
+                return f"Error: The request was invalid (Code 400). Please check the model name or payload."
+        except Exception as e:
             pass
+        
+        # Delay: 1s, 2s, 4s, 8s, 16s
         time.sleep(2**i)
     
-    return "I'm having trouble connecting to the Tech Cafe brain right now. Please try again in a moment."
+    return "I'm having trouble connecting to the Tech Cafe brain right now. This usually means the API is busy or the model name is being updated. Please try again in 30 seconds."
 
 # ================= HEADER =================
 st.title("☕ Tech Cafe")
@@ -336,7 +350,6 @@ Your goal is to provide concise, step-by-step instructions for common Windows is
 Refer to these specific categories when helping users: 
 Boot Issues, System Slowness, App Crashes, C Drive Full, Printer Issues, BSOD Errors, Audio/Camera/Display problems, and Virtual Machine setup.
 Be professional, friendly, and use clear technical language.
-If you don't know the answer, suggest checking the official manufacturer's support site.
 """
 
 # React to user input
@@ -348,7 +361,7 @@ if prompt := st.chat_input("How can I help you today?"):
 
     # Call Gemini API
     with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
+        with st.spinner("Connecting to Tech Cafe brain..."):
             response = call_gemini_api(prompt, SYSTEM_PROMPT)
             st.markdown(response)
     
