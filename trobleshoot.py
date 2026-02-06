@@ -29,23 +29,31 @@ def call_gemini_api(prompt, system_instruction):
     # Exponential backoff retry logic (Mandatory for Gemini API)
     for i in range(5):
         try:
-            response = requests.post(url, json=payload, timeout=30)
+            # Added a shorter timeout to trigger retries faster if the connection hangs
+            response = requests.post(url, json=payload, timeout=10)
+            
             if response.status_code == 200:
                 result = response.json()
-                # Extract text from the specific response path
-                return result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', "I received an empty response.")
-            elif response.status_code == 429:
-                # Rate limit hit, continue to next retry after sleep
-                pass
-            elif response.status_code == 400:
-                return f"Error: The request was invalid (Code 400). Please check the model name or payload."
+                # Safe extraction of the text content
+                candidates = result.get('candidates', [])
+                if candidates:
+                    parts = candidates[0].get('content', {}).get('parts', [])
+                    if parts:
+                        return parts[0].get('text', "I received an empty response from the brain.")
+                return "The brain returned a successful response but no content was found."
+            
+            # Handle rate limiting or server errors with backoff
+            elif response.status_code in [429, 500, 503]:
+                time.sleep(2**i)
+                continue
+            else:
+                return f"Technical Error ({response.status_code}): I'm unable to process this request right now."
+                
         except Exception as e:
-            pass
-        
-        # Delay: 1s, 2s, 4s, 8s, 16s
-        time.sleep(2**i)
+            # On exception, wait and retry
+            time.sleep(2**i)
     
-    return "I'm having trouble connecting to the Tech Cafe brain right now. This usually means the API is busy or the model name is being updated. Please try again in 30 seconds."
+    return "Connection Timeout: I'm having trouble connecting to the Tech Cafe brain. Please verify your internet connection and try again in 30 seconds."
 
 # ================= HEADER =================
 st.title("☕ Tech Cafe")
@@ -346,10 +354,7 @@ for message in st.session_state.messages:
 # Chat system prompt
 SYSTEM_PROMPT = """
 You are the Tech Cafe AI Assistant, a technical expert specializing in Windows Troubleshooting.
-Your goal is to provide concise, step-by-step instructions for common Windows issues.
-Refer to these specific categories when helping users: 
-Boot Issues, System Slowness, App Crashes, C Drive Full, Printer Issues, BSOD Errors, Audio/Camera/Display problems, and Virtual Machine setup.
-Be professional, friendly, and use clear technical language.
+Your goal is to provide concise, step-by-step instructions for common Windows issues based on the context provided in the Tech Cafe app.
 """
 
 # React to user input
