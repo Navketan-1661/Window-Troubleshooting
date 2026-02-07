@@ -46,31 +46,49 @@ st.markdown("""
 
 # ================= API HELPERS =================
 def call_gemini_api(prompt, system_instruction):
-    # API key provided by user
+    # API key is provided by the environment at runtime. 
+    # Must remain an empty string in the code.
     apiKey = "" 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key={apiKey}"
+    
+    # Model endpoint for the preview environment
+    model_name = "gemini-2.5-flash-preview-09-2025"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={apiKey}"
     
     payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "systemInstruction": {"parts": [{"text": system_instruction}]}
+        "contents": [{
+            "parts": [{"text": prompt}]
+        }],
+        "systemInstruction": {
+            "parts": [{"text": system_instruction}]
+        }
     }
     
-    # Exponential backoff retry logic
+    # Exponential backoff retry logic (Mandatory)
     for i in range(5):
         try:
-            response = requests.post(url, json=payload, timeout=15)
+            response = requests.post(url, json=payload, timeout=20)
+            
             if response.status_code == 200:
                 result = response.json()
-                return result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', "I couldn't generate a response.")
+                # Safely navigate the JSON response structure
+                text = result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', "")
+                if text:
+                    return text
+                return "The brain processed the request but returned no text."
+            
+            elif response.status_code == 403:
+                return "Error 403: Access Denied. This usually happens if the environment authentication is initializing. Please wait a moment and try again."
+            
             elif response.status_code == 429:
+                # Rate limit: wait and retry
                 time.sleep(2**i)
                 continue
-            else:
-                return f"Error: Received status code {response.status_code}."
+                
         except Exception as e:
+            # On network/timeout error, wait and retry
             time.sleep(2**i)
             
-    return "The Tech Cafe brain is currently offline. Please check your connection or try again later."
+    return "The Tech Cafe brain is currently taking a break. Please check your connection or try again in a minute."
 
 # ================= HEADER =================
 st.title("☕ Tech Cafe")
@@ -139,16 +157,21 @@ if "chat_open" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Floating Button HTML/JS
+# Floating Button HTML/JS (Triggers the toggle button below)
 st.markdown("""
-<div class="floating-chat-button" onclick="document.querySelector('.stButton button').click()">
+<div class="floating-chat-button" onclick="document.getElementById('toggle-chat-btn').click()">
     <span style="font-size: 30px; color: white;">💬</span>
 </div>
 """, unsafe_allow_html=True)
 
-# Hidden button to bridge the gap between HTML click and Streamlit session state
+# Hidden button to bridge HTML/JS and Streamlit state
 if st.button("Toggle Chat", key="toggle_btn", help="Click the bubble to chat"):
     st.session_state.chat_open = not st.session_state.chat_open
+
+# Custom CSS to simulate an ID for the button above so the JS can find it
+st.markdown("<style>div.stButton > button#toggle_btn { display: none; }</style>", unsafe_allow_html=True)
+# This dummy div helps our JS click the right button
+st.markdown('<div style="display:none"><button id="toggle-chat-btn" onclick="document.querySelector(\'button[key=toggle_btn]\').click()"></button></div>', unsafe_allow_html=True)
 
 if st.session_state.chat_open:
     with st.container():
@@ -168,8 +191,8 @@ if st.session_state.chat_open:
                     st.markdown(prompt)
                 
                 with st.chat_message("assistant"):
-                    sys_prompt = "You are the Tech Cafe AI Assistant. Help users troubleshoot Windows issues using simple, numbered steps."
-                    with st.spinner("Connecting..."):
+                    sys_prompt = "You are the Tech Cafe AI Assistant. Provide helpful, numbered troubleshooting steps for Windows OS issues. Be concise."
+                    with st.spinner("Connecting to brain..."):
                         response = call_gemini_api(prompt, sys_prompt)
                     st.markdown(response)
                     st.session_state.messages.append({"role": "assistant", "content": response})
