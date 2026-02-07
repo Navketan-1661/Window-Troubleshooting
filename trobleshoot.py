@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# ================= CUSTOM CSS FOR FLOATING CHATBOT =================
+# ================= CUSTOM CSS FOR UI =================
 st.markdown("""
 <style>
     /* Floating button style */
@@ -34,12 +34,29 @@ st.markdown("""
         transform: scale(1.1);
     }
     
-    /* FAQ Section styling to distinguish it from main content */
+    /* Chat Window Overlay Style */
+    .chat-window-container {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 380px;
+        max-height: 600px;
+        background-color: white;
+        border-radius: 15px;
+        box-shadow: 0px 10px 25px rgba(0,0,0,0.2);
+        z-index: 1001;
+        border: 1px solid #e0e0e0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* FAQ Section styling */
     .faq-container {
-        background-color: #f0f2f6;
+        background-color: #f8f9fa;
         padding: 20px;
-        border-radius: 10px;
-        height: 100%;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -49,13 +66,6 @@ def call_gemini_api(prompt, system_instruction):
     # API key is provided by the environment at runtime. 
     # Must remain an empty string in the code.
     apiKey = "" 
-    
-    # Check if the key is empty - this helps identify if we are waiting on the environment
-    if not apiKey:
-        # We perform a small sleep and check again just in case of race conditions
-        time.sleep(1)
-        if not apiKey:
-            return "The environment is still initializing its security credentials. Please wait 10 seconds and try again."
 
     # Model endpoint for the preview environment
     model_name = "gemini-2.5-flash-preview-09-2025"
@@ -70,41 +80,33 @@ def call_gemini_api(prompt, system_instruction):
         }
     }
     
-    # Exponential backoff retry logic (Mandatory)
+    # Exponential backoff retry logic
     for i in range(5):
         try:
             response = requests.post(url, json=payload, timeout=20)
             
             if response.status_code == 200:
                 result = response.json()
-                # Safely navigate the JSON response structure
                 text = result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', "")
                 if text:
                     return text
-                return "The brain processed the request but returned no text."
-            
             elif response.status_code == 403:
-                # If we still get a 403, we wait a bit longer during retries
+                # If 403 occurs, wait and retry as auth might be syncing
                 time.sleep(2**i)
                 continue
-            
             elif response.status_code == 429:
-                # Rate limit: wait and retry
                 time.sleep(2**i)
                 continue
-                
-        except Exception as e:
-            # On network/timeout error, wait and retry
+        except Exception:
             time.sleep(2**i)
             
-    return "The Tech Cafe brain is currently taking a break or still authenticating. Please check your connection or try again in a minute."
+    return "I'm having a bit of trouble connecting to the Tech Cafe brain. Please try your question again in a moment."
 
 # ================= HEADER =================
 st.title("☕ Tech Cafe")
 st.subheader("Windows OS Troubleshooting Guide")
 st.write(
-    "This technical guide explains common Windows problems, their causes, "
-    "and step-by-step solutions in simple language."
+    "Select an issue from the sidebar to see step-by-step fixes, or click the blue bubble to chat with our AI expert."
 )
 
 st.divider()
@@ -123,7 +125,7 @@ with col_main:
         ]
     )
 
-    # Dynamic Content Map
+    # Content Map
     content_map = {
         "Boot Issue": ("🖥 Boot Issues", "blue", "1. Disable Startup Apps: Ctrl+Shift+Esc > Startup. \n2. Enable Fast Startup: Power Options > Choose what buttons do. \n3. Run Startup Repair: Shift+Restart > Troubleshoot."),
         "System Slowness": ("🐌 System Slowness", "green", "1. Check Task Manager: End high CPU tasks. \n2. Cleanup Temp: Run cleanmgr. \n3. Optimize Visuals: Search 'Appearance' > Performance."),
@@ -159,54 +161,58 @@ with col_faq:
             st.write(a)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ================= FLOATING CHATBOT LOGIC =================
+# ================= FLOATING CHATBOT OVERLAY =================
 
 if "chat_open" not in st.session_state:
     st.session_state.chat_open = False
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Floating Button HTML/JS (Triggers the toggle button below)
+# Floating Button HTML (Clicks a hidden Streamlit button)
 st.markdown("""
-<div class="floating-chat-button" onclick="document.getElementById('toggle-chat-btn').click()">
+<div class="floating-chat-button" onclick="document.getElementById('hidden-chat-toggle').click()">
     <span style="font-size: 30px; color: white;">💬</span>
+</div>
+<div style="display:none">
+    <button id="hidden-chat-toggle" onclick="document.querySelector('button[key=chat_toggle_btn]').click()"></button>
 </div>
 """, unsafe_allow_html=True)
 
-# Hidden button to bridge HTML/JS and Streamlit state
-if st.button("Toggle Chat", key="toggle_btn", help="Click the bubble to chat"):
+# The bridge button that updates Streamlit state
+if st.button("Toggle Chat", key="chat_toggle_btn", help="Click the bubble to chat"):
     st.session_state.chat_open = not st.session_state.chat_open
 
-# Custom CSS to hide the bridge button and setup the ID trigger
-st.markdown("""
-<style>
-    div.stButton > button[key="toggle_btn"] { display: none; }
-</style>
-""", unsafe_allow_html=True)
+# Custom CSS to hide the Streamlit trigger button
+st.markdown("<style>div.stButton > button[key='chat_toggle_btn'] { display: none; }</style>", unsafe_allow_html=True)
 
-# Dummy hidden element to allow JS to click the button
-st.markdown('<div style="display:none"><button id="toggle-chat-btn" onclick="document.querySelector(\'button[key=toggle_btn]\').click()"></button></div>', unsafe_allow_html=True)
-
+# Render the Chat Window Overlay on the right
 if st.session_state.chat_open:
+    # We use a container placed at the end to allow absolute positioning styling
     with st.container():
-        st.write("---")
-        st.subheader("🤖 Tech Cafe AI Assistant")
+        st.markdown('<div class="chat-window-container">', unsafe_allow_html=True)
         
-        chat_placeholder = st.container(height=300)
-        with chat_placeholder:
+        # Internal Chat Layout
+        st.markdown("#### 🤖 Tech Cafe Assistant")
+        
+        # Chat history container
+        chat_box = st.container(height=350)
+        with chat_box:
             for m in st.session_state.messages:
                 with st.chat_message(m["role"]):
                     st.markdown(m["content"])
 
-        if prompt := st.chat_input("Ask me about Windows issues..."):
+        # Chat Input
+        if prompt := st.chat_input("Ask about Windows issues..."):
             st.session_state.messages.append({"role": "user", "content": prompt})
-            with chat_placeholder:
+            with chat_box:
                 with st.chat_message("user"):
                     st.markdown(prompt)
                 
                 with st.chat_message("assistant"):
                     sys_prompt = "You are the Tech Cafe AI Assistant. Provide helpful, numbered troubleshooting steps for Windows OS issues. Be concise."
-                    with st.spinner("Connecting to brain..."):
+                    with st.spinner("Expert is thinking..."):
                         response = call_gemini_api(prompt, sys_prompt)
                     st.markdown(response)
                     st.session_state.messages.append({"role": "assistant", "content": response})
+        
+        st.markdown('</div>', unsafe_allow_html=True)
