@@ -50,6 +50,13 @@ def call_gemini_api(prompt, system_instruction):
     # Must remain an empty string in the code.
     apiKey = "" 
     
+    # Check if the key is empty - this helps identify if we are waiting on the environment
+    if not apiKey:
+        # We perform a small sleep and check again just in case of race conditions
+        time.sleep(1)
+        if not apiKey:
+            return "The environment is still initializing its security credentials. Please wait 10 seconds and try again."
+
     # Model endpoint for the preview environment
     model_name = "gemini-2.5-flash-preview-09-2025"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={apiKey}"
@@ -77,7 +84,9 @@ def call_gemini_api(prompt, system_instruction):
                 return "The brain processed the request but returned no text."
             
             elif response.status_code == 403:
-                return "Error 403: Access Denied. This usually happens if the environment authentication is initializing. Please wait a moment and try again."
+                # If we still get a 403, we wait a bit longer during retries
+                time.sleep(2**i)
+                continue
             
             elif response.status_code == 429:
                 # Rate limit: wait and retry
@@ -88,7 +97,7 @@ def call_gemini_api(prompt, system_instruction):
             # On network/timeout error, wait and retry
             time.sleep(2**i)
             
-    return "The Tech Cafe brain is currently taking a break. Please check your connection or try again in a minute."
+    return "The Tech Cafe brain is currently taking a break or still authenticating. Please check your connection or try again in a minute."
 
 # ================= HEADER =================
 st.title("☕ Tech Cafe")
@@ -168,9 +177,14 @@ st.markdown("""
 if st.button("Toggle Chat", key="toggle_btn", help="Click the bubble to chat"):
     st.session_state.chat_open = not st.session_state.chat_open
 
-# Custom CSS to simulate an ID for the button above so the JS can find it
-st.markdown("<style>div.stButton > button#toggle_btn { display: none; }</style>", unsafe_allow_html=True)
-# This dummy div helps our JS click the right button
+# Custom CSS to hide the bridge button and setup the ID trigger
+st.markdown("""
+<style>
+    div.stButton > button[key="toggle_btn"] { display: none; }
+</style>
+""", unsafe_allow_html=True)
+
+# Dummy hidden element to allow JS to click the button
 st.markdown('<div style="display:none"><button id="toggle-chat-btn" onclick="document.querySelector(\'button[key=toggle_btn]\').click()"></button></div>', unsafe_allow_html=True)
 
 if st.session_state.chat_open:
