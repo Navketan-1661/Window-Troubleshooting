@@ -46,6 +46,7 @@ st.markdown("""
 
 # ================= API HELPERS =================
 def call_gemini_api(prompt, system_instruction):
+    # API key provided by user
     apiKey = "" 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key={apiKey}"
     
@@ -54,6 +55,7 @@ def call_gemini_api(prompt, system_instruction):
         "systemInstruction": {"parts": [{"text": system_instruction}]}
     }
     
+    # Exponential backoff retry logic
     for i in range(5):
         try:
             response = requests.post(url, json=payload, timeout=15)
@@ -63,9 +65,12 @@ def call_gemini_api(prompt, system_instruction):
             elif response.status_code == 429:
                 time.sleep(2**i)
                 continue
-        except Exception:
+            else:
+                return f"Error: Received status code {response.status_code}."
+        except Exception as e:
             time.sleep(2**i)
-    return "The Tech Cafe brain is currently offline. Please try again in a few minutes."
+            
+    return "The Tech Cafe brain is currently offline. Please check your connection or try again later."
 
 # ================= HEADER =================
 st.title("☕ Tech Cafe")
@@ -91,7 +96,7 @@ with col_main:
         ]
     )
 
-    # Dynamic Content based on Menu
+    # Dynamic Content Map
     content_map = {
         "Boot Issue": ("🖥 Boot Issues", "blue", "1. Disable Startup Apps: Ctrl+Shift+Esc > Startup. \n2. Enable Fast Startup: Power Options > Choose what buttons do. \n3. Run Startup Repair: Shift+Restart > Troubleshoot."),
         "System Slowness": ("🐌 System Slowness", "green", "1. Check Task Manager: End high CPU tasks. \n2. Cleanup Temp: Run cleanmgr. \n3. Optimize Visuals: Search 'Appearance' > Performance."),
@@ -129,38 +134,33 @@ with col_faq:
 
 # ================= FLOATING CHATBOT LOGIC =================
 
-# Use session state to toggle the chat window
 if "chat_open" not in st.session_state:
     st.session_state.chat_open = False
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Floating Button (Click to toggle)
-# We use a columns trick to push a button to the bottom right visually
+# Floating Button HTML/JS
 st.markdown("""
 <div class="floating-chat-button" onclick="document.querySelector('.stButton button').click()">
     <span style="font-size: 30px; color: white;">💬</span>
 </div>
 """, unsafe_allow_html=True)
 
-# Hidden button to trigger session state change from JavaScript/Click
+# Hidden button to bridge the gap between HTML click and Streamlit session state
 if st.button("Toggle Chat", key="toggle_btn", help="Click the bubble to chat"):
     st.session_state.chat_open = not st.session_state.chat_open
 
-# Render the Chat Window if open
 if st.session_state.chat_open:
     with st.container():
         st.write("---")
         st.subheader("🤖 Tech Cafe AI Assistant")
         
-        # Chat container
         chat_placeholder = st.container(height=300)
         with chat_placeholder:
             for m in st.session_state.messages:
                 with st.chat_message(m["role"]):
                     st.markdown(m["content"])
 
-        # Input
         if prompt := st.chat_input("Ask me about Windows issues..."):
             st.session_state.messages.append({"role": "user", "content": prompt})
             with chat_placeholder:
@@ -169,6 +169,7 @@ if st.session_state.chat_open:
                 
                 with st.chat_message("assistant"):
                     sys_prompt = "You are the Tech Cafe AI Assistant. Help users troubleshoot Windows issues using simple, numbered steps."
-                    response = call_gemini_api(prompt, sys_prompt)
+                    with st.spinner("Connecting..."):
+                        response = call_gemini_api(prompt, sys_prompt)
                     st.markdown(response)
                     st.session_state.messages.append({"role": "assistant", "content": response})
